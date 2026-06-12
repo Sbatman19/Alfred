@@ -1,7 +1,7 @@
 {
   "name": "alfred",
-  "version": "1.0.0",
-  "description": "Alfred — personal AI assistant. Phase 1: Alfred speaks.",
+  "version": "2.0.0",
+  "description": "Alfred - voice butler. Phase 2: tools, Google, web search, Postgres memory.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -10,6 +10,9 @@
     "node": ">=18"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "@anthropic-ai/sdk": "^0.39.0",
+    "express": "^4.19.2",
+    "googleapis": "^144.0.0",
+    "pg": "^8.13.1"
   }
 }
