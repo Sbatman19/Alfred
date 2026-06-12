@@ -106,7 +106,7 @@ async function fireWebhook(name, payload) {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ tool: name, ...payload }),
   });
   const text = await res.text().catch(() => '');
   return res.ok
