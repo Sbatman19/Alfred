@@ -75,8 +75,7 @@ async function synthesize(text) {
       console.error('[tts] ElevenLabs error', res.status);
       return null; // fall back to text
     }
-    const buf = Buffer.from(await res.arrayBuffer());
-    return `data:audio/mpeg;base64,${buf.toString('base64')}`;
+    return Buffer.from(await res.arrayBuffer()); // raw MP3 buffer
   } catch (err) {
     console.error('[tts] failed:', err.message);
     return null;
@@ -156,8 +155,8 @@ app.post('/api/chat', requireAuth, (req, res) => {
       await db.saveMessage(sessionId, 'user', message.trim());
       await db.saveMessage(sessionId, 'assistant', text);
 
-      const audio = await synthesize(text);
-      jobs.set(jobId, { status: 'done', text, audio, createdAt: Date.now() });
+      const audioBuf = await synthesize(text);
+      jobs.set(jobId, { status: 'done', text, hasAudio: !!audioBuf, audioBuf, createdAt: Date.now() });
     } catch (err) {
       console.error('[job] failed:', err);
       jobs.set(jobId, {
@@ -173,7 +172,20 @@ app.post('/api/chat', requireAuth, (req, res) => {
 app.get('/api/chat/:jobId', requireAuth, (req, res) => {
   const job = jobs.get(req.params.jobId);
   if (!job) return res.status(404).json({ status: 'not_found' });
-  res.json(job);
+  res.json({
+    status: job.status,
+    text: job.text,
+    hasAudio: !!job.audioBuf,
+    error: job.error,
+  });
+});
+
+// Phase 1 frontend contract: audio is fetched as a binary blob, not inline JSON.
+app.get('/api/audio/:jobId', requireAuth, (req, res) => {
+  const job = jobs.get(req.params.jobId);
+  if (!job || !job.audioBuf) return res.status(404).json({ error: 'No audio for this job' });
+  res.set('Content-Type', 'audio/mpeg');
+  res.send(job.audioBuf);
 });
 
 app.get('/health', (req, res) => res.json({ ok: true, phase: 2 }));
